@@ -21,14 +21,14 @@ def get_from_env(key):
     return os.environ.get(key)
 
 
-def send_message(chat_id, text, parse_mode=None):
+def send_message(chat_id, text, parse_mode=None, reply_markup=None):
     method = "sendMessage"
     token = get_from_env("BOT_TOKEN")
     url = urls.TELEGRAM_BOT_URL + f"{token}/{method}"
     if parse_mode is None:
         data = {"chat_id": chat_id, "text": text}
     else:
-        data = {"chat_id": chat_id, "text": text, "parse_mode": parse_mode}
+        data = {"chat_id": chat_id, "text": text, "parse_mode": parse_mode, "reply_markup": reply_markup}
     requests.post(url, data=data)
 
 
@@ -109,8 +109,13 @@ def help_command(chat_id):
            "/tomorrow — включение режима *\"а что же будет завтра?\"*\n\n" + \
            "После выбора режима напиши город, страну или континент, а затем я постараюсь тебе подсказать, " + \
            "какая температура в этом месте сейчас или какая температура там будет завтра.\n" + \
-           "Заметь, режим каждый раз выбирать не нужно, ведь я умный бот и помню что ты выбрал :)\n"
-    send_message(chat_id, info, parse_mode='Markdown')
+           "Заметь, режим каждый раз выбирать не нужно, ведь я умный бот и помню что ты выбрал :)\n\n" + \
+           "Если что-то не так или у вас возникли вопросы, вы всегда можете написать создателю этого бота."
+    reply_markup = json.dumps({'inline_keyboard': [[{
+        "text": "Написать разработчику",
+        "url": "telegram.me/penguiners"
+    }]]})
+    send_message(chat_id, info, 'Markdown', reply_markup)
 
 
 def is_command(r):
