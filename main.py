@@ -21,11 +21,14 @@ def get_from_env(key):
     return os.environ.get(key)
 
 
-def send_message(chat_id, text):
+def send_message(chat_id, text, parse_mode=None):
     method = "sendMessage"
     token = get_from_env("BOT_TOKEN")
     url = urls.TELEGRAM_BOT_URL + f"{token}/{method}"
-    data = {"chat_id": chat_id, "text": text}
+    if parse_mode is None:
+        data = {"chat_id": chat_id, "text": text}
+    else:
+        data = {"chat_id": chat_id, "text": text, "parse_mode": parse_mode}
     requests.post(url, data=data)
 
 
@@ -101,10 +104,13 @@ def start_command(chat_id):
 
 
 def help_command(chat_id):
-    info = "Сейчас я расскажу, чем я могу помочь тебе:\n\n" + \
-           "Напиши город, страну или континент и я постараюсь тебе подсказать, какая температура сейчас " \
-           "в этом месте."
-    send_message(chat_id, info)
+    info = "Сейчас я расскажу, что я умею:\n\n" + \
+           "/today — включение режима *\"здесь и сейчас!\"*\n" + \
+           "/tomorrow — включение режима *\"а что же будет завтра?\"*\n\n" + \
+           "После выбора режима напиши город, страну или континент, а затем я постараюсь тебе подсказать, " + \
+           "какая температура в этом месте сейчас или какая температура там будет завтра.\n" + \
+           "Заметь, режим каждый раз выбирать не нужно, ведь я умный бот и помню что ты выбрал :)\n"
+    send_message(chat_id, info, parse_mode='Markdown')
 
 
 def is_command(r):
@@ -123,7 +129,7 @@ def parse_text(chat_id, text):
         send_tomorrow_temperature(chat_id, text)
     else:
         send_message(chat_id, "Вы забыли включить режим. Используй команду /help, чтобы узнать подробнее" +
-                     " как его включить")
+                     " как его включить.")
 
 
 def parse_command(chat_id, text):
