@@ -92,7 +92,7 @@ def form_answer(place_en, country, degrees, weather_id, description, when, feels
     answer += temp + ' по Цельсию '
     if when == "today":
         answer += '\nОщущается как ' + sign(feels_like) + '°C'
-    answer += "\nСейчас на улице " if when == "today" else " Обещают, что на улице будет "
+    answer += "\nСейчас в этом месте " if when == "today" else " Обещают, что завтра в этом месте будет "
     answer += description + emojis.get_emoji(weather_id)
     return answer
 
