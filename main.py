@@ -7,6 +7,7 @@ from flask import Flask, request
 import json
 import requests
 import urls
+import texts
 import re
 
 
@@ -25,10 +26,16 @@ def send_message(chat_id, text, parse_mode=None, reply_markup=None):
     method = "sendMessage"
     token = get_from_env("BOT_TOKEN")
     url = urls.TELEGRAM_BOT_URL + f"{token}/{method}"
-    if parse_mode is None:
-        data = {"chat_id": chat_id, "text": text}
-    else:
-        data = {"chat_id": chat_id, "text": text, "parse_mode": parse_mode, "reply_markup": reply_markup}
+    data = {"chat_id": chat_id, "text": text, "parse_mode": parse_mode, "reply_markup": reply_markup}
+    requests.post(url, data=data)
+
+
+def send_dice(chat_id, reply_markup):
+    method = "sendDice"
+    token = get_from_env("BOT_TOKEN")
+    url = urls.TELEGRAM_BOT_URL + f"{token}/{method}"
+    url = urls.TELEGRAM_BOT_URL + f"{token}/{method}"
+    data = {"chat_id": chat_id, "reply_markup": reply_markup}
     requests.post(url, data=data)
 
 
@@ -45,13 +52,26 @@ def logging(data, filename="log.json"):
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
+def get_coord_for_city(city):
+    url = urls.API_GEOCODING_URL
+    param_request = {'q': city, 'limit': urls.LIMIT, 'appid': get_from_env("API_KEY")}
+    response = requests.get(url, params=param_request)
+    return response
+
+
 def get_response_for_city(city, url):
     param_request = {'q': city, 'appid': get_from_env("API_KEY"), 'cnt': 1, 'units': 'metric'}
     response = requests.get(url, params=param_request)
     return response
 
 
-def get_country(r, t='sys'):
+def get_response_for_coord(lat, lon, url):
+    param_request = {'lat': lat, 'lon': lon, 'appid': get_from_env("API_KEY"), 'cnt': 1, 'units': 'metric'}
+    response = requests.get(url, params=param_request)
+    return response
+
+
+def get_country(r, t):
     try:
         country = r.json()[t]['country']
         if country != '':
@@ -61,61 +81,84 @@ def get_country(r, t='sys'):
     return None
 
 
-def send_tomorrow_temperature(chat_id, place):
-    place_en = translator.translate(place, dest="en").text.title()
-    print(place_en)
-    response = get_response_for_city(place_en, urls.API_FORECAST_URL)
-    if response.status_code != 200:
-        return send_message(chat_id, 'Я не знаю ответа на ваш запрос, извините.')
-    degrees = round(response.json()['list'][0]['main']['temp'])
-    country = get_country(response, 'city')
+def form_answer(place_en, country, degrees, when, feels_like=0):
     answer = 'In ' + place_en
     if country is not None and country != place_en:
         answer += ' (' + country + ')'
-    answer += ' will be ' + str(degrees) + ' degrees tomorrow.'
-    answer = translator.translate(answer, dest="ru").text
-    return send_message(chat_id, answer)
+    answer += ' is ' if when == "today" else ' will be '
+    answer += str(degrees) + ' degrees '
+    answer += 'right now.' if when == "today" else 'tomorrow.'
+    if when == "today":
+        answer += ' Feels like ' + str(feels_like) + ' degrees.'
+    answer = re.sub('это ', '', translator.translate(answer, "ru").text)
+    return answer
 
 
-def send_temperature(chat_id, place):
-    place_en = translator.translate(place, "en").text.title()
-    print(place_en)
-    response = get_response_for_city(place_en, urls.API_BASE_URL)
+def form_keyboard(r):
+    keyboard = {"inline_keyboard": []}
+    for i in range(len(r.json())):
+        coord = " (" + str(round(r.json()[i]['lat'])) + "°ш, " + str(round(r.json()[i]['lon'])) + '°д)'
+        option = [{"text": translator.translate(get_country(r, i), "ru").text + coord,
+                   "callback_data": str(r.json()[i]['lat']) + ' ' + str(r.json()[i]['lon'])}]
+        keyboard["inline_keyboard"].append(option)
+    return keyboard
+
+
+def send_tomorrow_temperature(chat_id, place_en=None, lat=None, lon=None):
+    if place_en is not None:
+        response = get_response_for_city(place_en, urls.API_FORECAST_URL)
+    else:
+        response = get_response_for_coord(lat, lon, urls.API_FORECAST_URL)
     if response.status_code != 200:
-        return send_message(chat_id, 'Я не знаю ответа на ваш запрос, извините.')
+        return send_message(chat_id, texts.no_answer)
+    degrees = round(response.json()['list'][0]['main']['temp'])
+    place_en = response.json()['city']['name']
+    country = get_country(response, 'city')
+    send_message(chat_id, form_answer(place_en, country, degrees, "tomorrow"))
+    lon = response.json()['city']['coord']['lon']
+    lat = response.json()['city']['coord']['lat']
+    send_location(chat_id, lon, lat)
+
+
+def send_today_temperature(chat_id, place_en=None, lat=None, lon=None):
+    if place_en is not None:
+        response = get_response_for_city(place_en, urls.API_BASE_URL)
+    else:
+        response = get_response_for_coord(lat, lon, urls.API_BASE_URL)
+    if response.status_code != 200:
+        return send_message(chat_id, texts.no_answer)
     degrees = round(response.json()['main']['temp'])
     feels_like = round(response.json()['main']['feels_like'])
-    country = get_country(response)
-    answer = 'In ' + place_en
-    if country is not None and country != place_en:
-        answer += ' (' + country + ')'
-    answer += ' is ' + str(degrees) + ' degrees right now. Feels like ' + str(feels_like) + ' degrees.'
-    answer = re.sub('это ', '', translator.translate(answer, "ru").text)
-    return send_message(chat_id, answer)
-    # lon = response.json()['coord']['lon']
-    # lat = response.json()['coord']['lat']
-    # send_location(chat_id, lon, lat)
+    place_en = response.json()['name']
+    country = get_country(response, 'sys')
+    send_message(chat_id, form_answer(place_en, country, degrees, "today", feels_like))
+    lon = response.json()['coord']['lon']
+    lat = response.json()['coord']['lat']
+    send_location(chat_id, lon, lat)
+
+
+def get_place(chat_id, place, when):
+    place_en = translator.translate(place, "en").text.title()
+    print(place_en)
+    coord = get_coord_for_city(place_en)
+    if len(coord.json()) > 1:
+        keyboard = form_keyboard(coord)
+        return send_dice(chat_id, json.dumps(keyboard))
+    if when == "today":
+        return send_today_temperature(chat_id, place_en=place_en)
+    return send_tomorrow_temperature(chat_id, place_en=place_en)
 
 
 def start_command(chat_id):
-    info = "Привет, я готов предоставить тебе прогноз погоды по всему миру.\n\n" + \
-           "Напиши /help, если хочешь узнать, что я умею, или если тебе нужна помощь."
-    send_message(chat_id, info)
+    send_message(chat_id, texts.start_info)
 
 
 def help_command(chat_id):
-    info = "Сейчас я расскажу, что я умею:\n\n" + \
-           "/today — включение режима *\"здесь и сейчас!\"*\n" + \
-           "/tomorrow — включение режима *\"а что же будет завтра?\"*\n\n" + \
-           "После выбора режима напиши город, страну или континент, а затем я постараюсь тебе подсказать, " + \
-           "какая температура в этом месте сейчас или какая температура там будет завтра.\n" + \
-           "Заметь, режим каждый раз выбирать не нужно, ведь я умный бот и помню что ты выбрал :)\n\n" + \
-           "Если что-то не так или у вас возникли вопросы, вы всегда можете написать создателю этого бота."
-    reply_markup = json.dumps({'inline_keyboard': [[{
+    contact_developer = json.dumps({'inline_keyboard': [[{
         "text": "Написать разработчику",
         "url": "telegram.me/penguiners"
     }]]})
-    send_message(chat_id, info, 'Markdown', reply_markup)
+    send_message(chat_id, texts.info, 'Markdown', contact_developer)
 
 
 def is_command(r):
@@ -127,14 +170,26 @@ def is_command(r):
     return False
 
 
-def parse_text(chat_id, text):
+def is_callback_query(r):
+    try:
+        r.json["callback_query"]
+    except KeyError:
+        return False
+    return True
+
+
+def parse_callback_query(chat_id, data):
+    lat, lon = data.split(' ')
     if users[chat_id] == "today":
-        send_temperature(chat_id, text)
-    elif users[chat_id] == "tomorrow":
-        send_tomorrow_temperature(chat_id, text)
+        return send_today_temperature(chat_id, lat=lat, lon=lon)
+    send_tomorrow_temperature(chat_id, lat=lat, lon=lon)
+
+
+def parse_text(chat_id, text):
+    if users[chat_id]:
+        get_place(chat_id, text, users[chat_id])
     else:
-        send_message(chat_id, "Вы забыли включить режим. Используй команду /help, чтобы узнать подробнее" +
-                     " как его включить.")
+        send_message(chat_id, texts.forgot)
 
 
 def parse_command(chat_id, text):
@@ -145,29 +200,48 @@ def parse_command(chat_id, text):
     elif text == "/today" or text == "/tomorrow":
         users[chat_id] = text[1:]
     else:
-        send_message(chat_id, "Я не знаю такой команды :(")
+        send_message(chat_id, texts.do_not_know)
+
+
+def get_chat_id(r):
+    try:
+        chat_id = r.json["message"]["chat"]["id"]
+        return chat_id
+    except KeyError:
+        pass
+    try:
+        chat_id = r.json["callback_query"]["message"]["chat"]["id"]
+        return chat_id
+    except KeyError:
+        pass
+    return False
 
 
 @app.route("/", methods=["POST"])
 def processing():
     logging(request.json)
-    chat_id = request.json["message"]["chat"]["id"]
 
-    try:
-        users[chat_id]
-    except KeyError:
-        users[chat_id] = ""
-
-    try:
-        text = request.json["message"]["text"]
-    except KeyError:
-        send_message(chat_id, "Я вас не понимаю :(")
+    chat_id = get_chat_id(request)
+    if not chat_id:
+        send_message(chat_id, texts.smth_wrong)
         return {"ok": True}
 
-    if is_command(request):
-        parse_command(chat_id, text)
+    if chat_id not in users.keys():
+        users[chat_id] = ""
+
+    if is_callback_query(request):
+        parse_callback_query(chat_id, request.json["callback_query"]["data"])
     else:
-        parse_text(chat_id, text)
+        try:
+            text = request.json["message"]["text"]
+        except KeyError:
+            send_message(chat_id, texts.do_not_understand)
+            return {"ok": True}
+
+        if is_command(request):
+            parse_command(chat_id, text)
+        else:
+            parse_text(chat_id, text)
 
     print(users)
     return {"ok": True}
