@@ -6,7 +6,7 @@ import country_converter as coco
 from flask import Flask, request
 import json
 import requests
-from src import texts, urls
+from src import texts, urls, emojis
 import re
 
 translator = Translator()
@@ -80,19 +80,20 @@ def get_country(r, t):
     return None
 
 
-def form_answer(place_en, country, degrees, description, when, feels_like=0):
+def form_answer(place_en, country, degrees, weather_id, description, when, feels_like=0):
     sign = lambda i: ("+" if i > 0 else "") + str(i)
     answer = 'In ' + place_en
     if country is not None and country != place_en:
         answer += ' (' + country + ')'
-    answer += ' is ' if when == "today" else ' will be '
-    answer += sign(degrees) + ' degrees '
-    answer += 'right now.' if when == "today" else 'tomorrow.'
+    print(answer)
+    answer = translator.translate(answer, 'ru').text
+    answer += ' сейчас ' if when == "today" else ' завтра будет '
+    temp = translator.translate(sign(degrees) + ' degrees', 'ru').text
+    answer += temp + ' по Цельсию '
     if when == "today":
-        answer += ' Feels like ' + sign(feels_like) + ' degrees.'
-    answer = re.sub('это ', '', translator.translate(answer, "ru").text)
-    answer += " Сейчас на улице " if when == "today" else " Обещают, что на улице будет "
-    answer += description + "."
+        answer += '\nОщущается как ' + sign(feels_like) + '°C'
+    answer += "\nСейчас на улице " if when == "today" else " Обещают, что на улице будет "
+    answer += description + emojis.get_emoji(weather_id)
     return answer
 
 
@@ -113,11 +114,12 @@ def send_tomorrow_temperature(chat_id, place_en=None, lat=None, lon=None):
         response = get_response_for_coord(lat, lon, urls.API_FORECAST_URL)
     if response.status_code != 200:
         return send_message(chat_id, texts.no_answer)
+    weather_id = response.json()['list'][0]['weather'][0]['id']
     degrees = round(response.json()['list'][0]['main']['temp'])
-    place_en = response.json()['city']['name']
+    place_en = translator.translate(response.json()['city']['name'], dest="en").text.title()
     country = get_country(response, 'city')
     description = response.json()['list'][0]['weather'][0]['description']
-    send_message(chat_id, form_answer(place_en, country, degrees, description, "tomorrow"))
+    send_message(chat_id, form_answer(place_en, country, degrees, weather_id, description, "tomorrow"))
     lon = response.json()['city']['coord']['lon']
     lat = response.json()['city']['coord']['lat']
     send_location(chat_id, lon, lat)
@@ -130,20 +132,20 @@ def send_today_temperature(chat_id, place_en=None, lat=None, lon=None):
         response = get_response_for_coord(lat, lon, urls.API_BASE_URL)
     if response.status_code != 200:
         return send_message(chat_id, texts.no_answer)
+    weather_id = response.json()['weather'][0]['id']
     degrees = round(response.json()['main']['temp'])
     feels_like = round(response.json()['main']['feels_like'])
-    place_en = response.json()['name']
+    place_en = translator.translate(response.json()['name'], dest="en").text.title()
     country = get_country(response, 'sys')
     description = response.json()['weather'][0]['description']
-    send_message(chat_id, form_answer(place_en, country, degrees, description, "today", feels_like))
+    send_message(chat_id, form_answer(place_en, country, degrees, weather_id, description, "today", feels_like))
     lon = response.json()['coord']['lon']
     lat = response.json()['coord']['lat']
     send_location(chat_id, lon, lat)
 
 
 def get_place(chat_id, place, when):
-    place_en = translator.translate(place, "en").text.title()
-    print(place_en)
+    place_en = translator.translate(place, dest="en").text.title()
     coord = get_coord_for_city(place_en)
     if len(coord.json()) > 1:
         keyboard = form_keyboard(coord)
@@ -246,7 +248,6 @@ def processing():
             parse_command(chat_id, text)
         else:
             parse_text(chat_id, text)
-
     print(users)
     return {"ok": True}
 
