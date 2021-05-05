@@ -148,8 +148,9 @@ def parse_text(chat_id, text):
 
 def parse_command(chat_id, command):
     text = None
+    command = command.strip()
     if " " in command:
-        command, text = command.split(" ")
+        command, text = command.split(" ", 1)
     if command == "/start":
         start_command(chat_id)
     elif command == "/help":
@@ -157,7 +158,7 @@ def parse_command(chat_id, command):
     elif command == "/today" or command == "/tomorrow":
         users[chat_id] = command[1:]
         if text is not None:
-            parse_callback_query(chat_id, text)
+            parse_text(chat_id, text)
     else:
         send_message(chat_id, texts.do_not_know)
 
