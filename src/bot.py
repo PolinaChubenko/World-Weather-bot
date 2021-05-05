@@ -146,13 +146,18 @@ def parse_text(chat_id, text):
         send_message(chat_id, texts.forgot)
 
 
-def parse_command(chat_id, text):
-    if text == "/start":
+def parse_command(chat_id, command):
+    text = None
+    if " " in command:
+        command, text = command.split(" ")
+    if command == "/start":
         start_command(chat_id)
-    elif text == "/help":
+    elif command == "/help":
         help_command(chat_id)
-    elif text == "/today" or text == "/tomorrow":
-        users[chat_id] = text[1:]
+    elif command == "/today" or command == "/tomorrow":
+        users[chat_id] = command[1:]
+        if text is not None:
+            parse_callback_query(chat_id, text)
     else:
         send_message(chat_id, texts.do_not_know)
 
