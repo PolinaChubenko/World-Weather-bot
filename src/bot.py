@@ -140,24 +140,23 @@ def parse_callback_query(chat_id, data):
 
 
 def parse_text(chat_id, text):
-    if users[chat_id]:
+    if users[chat_id] is not None:
         get_place(chat_id, text, users[chat_id])
     else:
         send_message(chat_id, texts.forgot)
 
 
 def parse_command(chat_id, command):
-    text = None
-    command = command.strip()
-    if " " in command:
-        command, text = command.split(" ", 1)
+    text = command.split()
+    command = text[0]
+    text = ' '.join(text[1:])
     if command == "/start":
         start_command(chat_id)
     elif command == "/help":
         help_command(chat_id)
     elif command == "/today" or command == "/tomorrow":
         users[chat_id] = command[1:]
-        if text is not None:
+        if text != "":
             parse_text(chat_id, text)
     else:
         send_message(chat_id, texts.do_not_know)
@@ -187,7 +186,7 @@ def processing():
         return {"ok": True}
 
     if chat_id not in users.keys():
-        users[chat_id] = ""
+        users[chat_id] = None
 
     if is_callback_query(request):
         parse_callback_query(chat_id, request.json["callback_query"]["data"])
