@@ -21,6 +21,7 @@ upside_down = u'\U0001F643'
 pensive = u'\U0001F614'
 monkey = u'\U0001F648'
 point_down = u'\U0001F447'
+monocle = u'\U0001F9D0'
 
 planet1 = u'\U0001F30D'
 planet2 = u'\U0001F30E'
