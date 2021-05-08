@@ -1,3 +1,6 @@
+![build status](https://github.com/PolinaChubenko/World-Weather-bot/workflows/World-Weather-bot/badge.svg)
+![pylint Score](https://mperlet.github.io/pybadge/badges/8.28.svg)
+![Pytests](https://img.shields.io/travis/73VW/TechnicalReport.svg?label=Test)
 ## World-Weather-bot
 
 This is a telegram bot written in Python using flask and requests modules and 
