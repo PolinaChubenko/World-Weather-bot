@@ -1,9 +1,9 @@
 import os
 from os.path import join, dirname
-import requests
 import json
+import requests
 from dotenv import load_dotenv
-from src import urls
+import urls
 
 
 def get_from_env(key):
@@ -16,7 +16,8 @@ def send_message(chat_id, text, parse_mode=None, reply_markup=None):
     method = "sendMessage"
     token = get_from_env("BOT_TOKEN")
     url = urls.TELEGRAM_BOT_URL + f"{token}/{method}"
-    data = {"chat_id": chat_id, "text": text, "parse_mode": parse_mode, "reply_markup": reply_markup}
+    data = {"chat_id": chat_id, "text": text, "parse_mode": parse_mode,
+            "reply_markup": reply_markup}
     requests.post(url, data=data)
 
 
@@ -49,7 +50,8 @@ def get_response_for_coord_by_city(city):
 
 
 def get_response_for_city_by_city(city, url):
-    param_request = {'q': city, 'appid': get_from_env("API_KEY"), 'lang': 'ru', 'cnt': 1, 'units': 'metric'}
+    param_request = {'q': city, 'appid': get_from_env("API_KEY"),
+                     'lang': 'ru', 'cnt': 1, 'units': 'metric'}
     response = requests.get(url, params=param_request)
     return response
 

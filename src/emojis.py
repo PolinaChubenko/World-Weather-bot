@@ -1,31 +1,31 @@
-thunderstorm = u'\U000026C8'
-tornado = u'\U0001F32A'
-fog = u'\U0001F32B'
-drizzle = u'\U0001F327'
-rain = u'\U00002614'
-snow = u'\U0001F328'
-snowman = u'\U000026C4'
-atmosphere = u'\U0001F301'
-clearSky = u'\U00002600'
-fewClouds = u'\U0001F324'
-aFewClouds = u'\U000026C5'
-manyClouds = u'\U0001F325'
-clouds = u'\U00002601'
-hot = u'\U0001F525'
-def_emoji = u'\U0001F300'
+THUNDERSTORM = u'\U000026C8'
+TORNADO = u'\U0001F32A'
+FOG = u'\U0001F32B'
+DRIZZLE = u'\U0001F327'
+RAIN = u'\U00002614'
+SNOW = u'\U0001F328'
+SNOWMAN = u'\U000026C4'
+ATMOSPHERE = u'\U0001F301'
+CLEAR_SKY = u'\U00002600'
+FEW_CLOUDS = u'\U0001F324'
+A_FEW_CLOUDS = u'\U000026C5'
+MANY_CLOUDS = u'\U0001F325'
+CLOUDS = u'\U00002601'
+HOT = u'\U0001F525'
+DEF_EMOJI = u'\U0001F300'
 
-thinking = u'\U0001F914'
-success = u'\U0001F60E'
-wink = u'\U0001F609'
-upside_down = u'\U0001F643'
-pensive = u'\U0001F614'
-monkey = u'\U0001F648'
-point_down = u'\U0001F447'
-monocle = u'\U0001F9D0'
+THINKING = u'\U0001F914'
+SUCCESS = u'\U0001F60E'
+WINK = u'\U0001F609'
+UPSIDE_DOWN = u'\U0001F643'
+PENSIVE = u'\U0001F614'
+MONKEY = u'\U0001F648'
+POINT_DOWN = u'\U0001F447'
+MONOCLE = u'\U0001F9D0'
 
-planet1 = u'\U0001F30D'
-planet2 = u'\U0001F30E'
-planet3 = u'\U0001F30F'
+PLANET1 = u'\U0001F30D'
+PLANET2 = u'\U0001F30E'
+PLANET3 = u'\U0001F30F'
 
 thunderstormID = [200, 201, 202, 210, 211, 212, 221, 230, 231, 232]
 drizzleID = [300, 301, 302, 310, 311, 312, 313, 314, 321]
@@ -40,25 +40,25 @@ cloudsID = [801, 802, 803, 804]
 def get_emoji(weather):
     weather = int(weather)
     if weather in thunderstormID:
-        return thunderstorm
+        return THUNDERSTORM
     if weather in drizzleID:
-        return drizzle
+        return DRIZZLE
     if weather in rainID:
-        return rain
+        return RAIN
     if weather in snowID:
-        return snow
+        return SNOW
     if weather in atmosphereID:
-        return atmosphere
+        return ATMOSPHERE
     if weather in tornadoID:
         return tornadoID
     if weather in clearID:
-        return clearSky
+        return CLEAR_SKY
     if weather == 801:
-        return fewClouds
+        return FEW_CLOUDS
     if weather == 802:
-        return aFewClouds
+        return A_FEW_CLOUDS
     if weather == 803:
-        return manyClouds
+        return MANY_CLOUDS
     if weather == 804:
-        return clouds
+        return CLOUDS
     return None

@@ -1,5 +1,5 @@
-from src.queries import get_from_env
 import psycopg2
+from queries import get_from_env
 
 DATABASE_URL = get_from_env('DATABASE_URL')
 
@@ -13,7 +13,7 @@ def create_db():
         creation = """CREATE TABLE chats_db (id SERIAL PRIMARY KEY, chat_id INTEGER, mode TEXT)"""
         cursor.execute(creation)
         cursor.close()
-    except (Exception, psycopg2.DatabaseError):
+    except psycopg2.DatabaseError:
         pass
     finally:
         if connection is not None:
@@ -31,7 +31,7 @@ def db_add_value(chat_id):
             cursor.execute("""INSERT INTO chats_db(chat_id, mode) VALUES(%s, %s)""", (chat_id, ''))
         cursor.close()
         connection.commit()
-    except (Exception, psycopg2.DatabaseError):
+    except psycopg2.DatabaseError:
         connection.rollback()
     finally:
         if connection is not None:
@@ -46,7 +46,7 @@ def db_change_value(chat_id, mode):
         cursor.execute("""UPDATE chats_db SET mode = %s WHERE chat_id = %s""", (mode, chat_id))
         cursor.close()
         connection.commit()
-    except (Exception, psycopg2.DatabaseError):
+    except psycopg2.DatabaseError:
         connection.rollback()
     finally:
         if connection is not None:
@@ -64,7 +64,7 @@ def db_get_value(chat_id):
         response = mode[0]
         cursor.close()
         connection.commit()
-    except (Exception, psycopg2.DatabaseError):
+    except psycopg2.DatabaseError:
         connection.rollback()
     finally:
         if connection is not None:

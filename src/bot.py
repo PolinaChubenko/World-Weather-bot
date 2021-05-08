@@ -2,9 +2,11 @@ import json
 import country_converter as coco
 from flask import Flask, request
 from googletrans import Translator
-from src import emojis, texts, urls
-from src import queries
-from src import postgres
+import emojis
+import texts
+import urls
+import queries
+import postgres
 
 
 translator = Translator()
@@ -34,7 +36,8 @@ def form_answer(place_en, country, degrees, weather_id, description, when, feels
     answer += temp + ' по Цельсию '
     if when == "today":
         answer += '\nОщущается как ' + sign(feels_like) + '°C'
-    answer += "\nСейчас в этом месте " if when == "today" else " Обещают, что завтра в этом месте будет "
+    answer += "\nСейчас в этом месте " if when == "today" \
+        else " Обещают, что завтра в этом месте будет "
     answer += description + emojis.get_emoji(weather_id)
     return answer
 
@@ -42,7 +45,8 @@ def form_answer(place_en, country, degrees, weather_id, description, when, feels
 def form_keyboard(r):
     keyboard = {"inline_keyboard": []}
     for i in range(len(r.json())):
-        coord = " (" + str(round(r.json()[i]['lat'])) + "°ш, " + str(round(r.json()[i]['lon'])) + '°д)'
+        coord = " (" + str(round(r.json()[i]['lat'])) + "°ш, " + \
+                str(round(r.json()[i]['lon'])) + '°д)'
         option = [{"text": translator.translate(get_country(r, i), "ru").text + coord,
                    "callback_data": str(r.json()[i]['lat']) + ' ' + str(r.json()[i]['lon'])}]
         keyboard["inline_keyboard"].append(option)
@@ -55,7 +59,7 @@ def send_tomorrow_temperature(chat_id, place_en=None, lat=None, lon=None):
     else:
         response = queries.get_response_for_city_by_coord(lat, lon, urls.API_FORECAST_URL)
     if response.status_code != 200:
-        return queries.send_message(chat_id, texts.no_answer)
+        return queries.send_message(chat_id, texts.NO_ANSWER)
     weather_id = response.json()['list'][0]['weather'][0]['id']
     degrees = round(response.json()['list'][0]['main']['temp'])
     place_en = translator.translate(response.json()['city']['name'], dest="en").text.title()
@@ -65,7 +69,7 @@ def send_tomorrow_temperature(chat_id, place_en=None, lat=None, lon=None):
     queries.send_message(chat_id, answer)
     lon = response.json()['city']['coord']['lon']
     lat = response.json()['city']['coord']['lat']
-    queries.send_location(chat_id, lon, lat)
+    return queries.send_location(chat_id, lon, lat)
 
 
 def send_today_temperature(chat_id, place_en=None, lat=None, lon=None):
@@ -74,7 +78,7 @@ def send_today_temperature(chat_id, place_en=None, lat=None, lon=None):
     else:
         response = queries.get_response_for_city_by_coord(lat, lon, urls.API_BASE_URL)
     if response.status_code != 200:
-        return queries.send_message(chat_id, texts.no_answer)
+        return queries.send_message(chat_id, texts.NO_ANSWER)
     weather_id = response.json()['weather'][0]['id']
     degrees = round(response.json()['main']['temp'])
     feels_like = round(response.json()['main']['feels_like'])
@@ -85,7 +89,7 @@ def send_today_temperature(chat_id, place_en=None, lat=None, lon=None):
     queries.send_message(chat_id, answer)
     lon = response.json()['coord']['lon']
     lat = response.json()['coord']['lat']
-    queries.send_location(chat_id, lon, lat)
+    return queries.send_location(chat_id, lon, lat)
 
 
 def get_place(chat_id, place, when):
@@ -98,10 +102,11 @@ def get_place(chat_id, place, when):
         return send_today_temperature(chat_id, place_en=place_en)
     if when == "tomorrow":
         return send_tomorrow_temperature(chat_id, place_en=place_en)
+    return queries.send_message(chat_id, texts.SOMETHING_WRONG)
 
 
 def start_command(chat_id):
-    queries.send_message(chat_id, texts.start_info)
+    queries.send_message(chat_id, texts.START_INFO)
 
 
 def help_command(chat_id):
@@ -109,7 +114,7 @@ def help_command(chat_id):
         "text": "Написать разработчику",
         "url": "telegram.me/penguiners"
     }]]})
-    queries.send_message(chat_id, texts.info, 'Markdown', contact_developer)
+    queries.send_message(chat_id, texts.INFO, 'Markdown', contact_developer)
 
 
 def is_command(r):
@@ -136,7 +141,7 @@ def parse_callback_query(chat_id, data):
         return send_today_temperature(chat_id, lat=lat, lon=lon)
     if mode == "tomorrow":
         return send_tomorrow_temperature(chat_id, lat=lat, lon=lon)
-    return queries.send_message(chat_id, texts.forgot)
+    return queries.send_message(chat_id, texts.MODE_FORGOT)
 
 
 def parse_text(chat_id, text):
@@ -144,7 +149,7 @@ def parse_text(chat_id, text):
     if mode != '':
         get_place(chat_id, text, mode)
     else:
-        queries.send_message(chat_id, texts.forgot)
+        queries.send_message(chat_id, texts.MODE_FORGOT)
 
 
 def parse_command(chat_id, command):
@@ -155,12 +160,12 @@ def parse_command(chat_id, command):
         start_command(chat_id)
     elif command == "/help":
         help_command(chat_id)
-    elif command == "/today" or command == "/tomorrow":
+    elif command in ('/today', '/tomorrow'):
         postgres.db_change_value(chat_id, command[1:])
         if text != "":
             parse_text(chat_id, text)
     else:
-        queries.send_message(chat_id, texts.do_not_know)
+        queries.send_message(chat_id, texts.UNKNOWN_COMMAND)
 
 
 def get_chat_id(r):
@@ -183,7 +188,7 @@ def processing():
 
     chat_id = get_chat_id(request)
     if not chat_id:
-        queries.send_message(chat_id, texts.smth_wrong)
+        queries.send_message(chat_id, texts.SOMETHING_WRONG)
         return {"ok": True}
 
     postgres.db_add_value(chat_id)
@@ -194,7 +199,7 @@ def processing():
         try:
             text = request.json["message"]["text"]
         except KeyError:
-            queries.send_message(chat_id, texts.do_not_understand)
+            queries.send_message(chat_id, texts.DO_NOT_UNDERSTAND)
             return {"ok": True}
 
         if is_command(request):
