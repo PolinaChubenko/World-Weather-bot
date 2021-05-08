@@ -1,7 +1,7 @@
-import os
+from src.queries import get_from_env
 import psycopg2
 
-DATABASE_URL = os.environ['DATABASE_URL']
+DATABASE_URL = get_from_env('DATABASE_URL')
 
 
 def create_db():
