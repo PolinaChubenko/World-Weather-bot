@@ -2,11 +2,11 @@ import json
 import country_converter as coco
 from flask import Flask, request
 from googletrans import Translator
-import emojis
-import texts
-import urls
-import queries
-import postgres
+import src.emojis as emojis
+import src.texts as texts
+import src.urls as urls
+import src.queries as queries
+import src.postgres as postgres
 
 
 translator = Translator()

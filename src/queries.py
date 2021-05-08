@@ -3,7 +3,7 @@ from os.path import join, dirname
 import json
 import requests
 from dotenv import load_dotenv
-import urls
+import src.urls as urls
 
 
 def get_from_env(key):

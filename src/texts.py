@@ -1,4 +1,4 @@
-import emojis
+import src.emojis as emojis
 
 START_INFO = "Привет-привет! " + emojis.UPSIDE_DOWN + "\nЯ готов предоставить тебе прогноз погоды " + \
         "на сегодня и на завтра в любой точке мира ~" + emojis.PLANET1 + "~" + emojis.PLANET2 + "~" + \

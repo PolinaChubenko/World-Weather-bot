@@ -1,5 +1,5 @@
 import psycopg2
-from queries import get_from_env
+from src.queries import get_from_env
 
 DATABASE_URL = get_from_env('DATABASE_URL')
 
