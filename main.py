@@ -1,7 +1,4 @@
-def print_hi(name):
-    print(f'Hi, {name}')
+from src.bot import app
 
-
-if __name__ == '__main__':
-    print_hi('programmer')
-
+if __name__ == "__main__":
+    app.run()
