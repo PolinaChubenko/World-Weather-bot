@@ -1,5 +1,5 @@
 ![build status](https://github.com/PolinaChubenko/World-Weather-bot/workflows/World-Weather-bot/badge.svg)
-![pylint Score](https://mperlet.github.io/pybadge/badges/7.99.svg)
+![pylint Score](https://mperlet.github.io/pybadge/badges/7.92.svg)
 ![Pytests](https://img.shields.io/travis/73VW/TechnicalReport.svg?label=Pytest)
 ## World-Weather-bot
 
