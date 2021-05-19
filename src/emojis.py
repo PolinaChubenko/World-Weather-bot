@@ -34,31 +34,28 @@ snowID = [600, 601, 602, 611, 612, 613, 615, 616, 620, 621, 622]
 atmosphereID = [701, 711, 721, 731, 741, 751, 761, 762, 771]
 tornadoID = [781]
 clearID = [800]
-cloudsID = [801, 802, 803, 804]
+few_cloudsID = [801]
+a_few_cloudsID = [802]
+many_cloudsID = [803]
+cloudsID = [804]
+
+emojis_codes = [
+    (thunderstormID, THUNDERSTORM),
+    (drizzleID, DRIZZLE),
+    (rainID, RAIN),
+    (snowID, SNOW),
+    (atmosphereID, ATMOSPHERE),
+    (tornadoID, TORNADO),
+    (clearID, CLEAR_SKY),
+    (few_cloudsID, few_cloudsID),
+    (a_few_cloudsID, A_FEW_CLOUDS),
+    (many_cloudsID, MANY_CLOUDS),
+    (cloudsID, CLOUDS)
+]
 
 
 def get_emoji(weather):
-    weather = int(weather)
-    if weather in thunderstormID:
-        return THUNDERSTORM
-    if weather in drizzleID:
-        return DRIZZLE
-    if weather in rainID:
-        return RAIN
-    if weather in snowID:
-        return SNOW
-    if weather in atmosphereID:
-        return ATMOSPHERE
-    if weather in tornadoID:
-        return tornadoID
-    if weather in clearID:
-        return CLEAR_SKY
-    if weather == 801:
-        return FEW_CLOUDS
-    if weather == 802:
-        return A_FEW_CLOUDS
-    if weather == 803:
-        return MANY_CLOUDS
-    if weather == 804:
-        return CLOUDS
+    for code, emoji in emojis_codes:
+        if int(weather) in code:
+            return emoji
     return None
